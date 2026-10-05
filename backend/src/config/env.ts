@@ -24,12 +24,35 @@ export const env = {
 };
 
 export function validateEnv() {
-  if (!env.MONGODB_URI) {
-    console.warn('[WARN] MONGODB_URI is not set, defaulting to local mongodb');
-  }
-  if (!env.JWT_SECRET || env.JWT_SECRET === 'fallback_secret_must_be_set_in_production_987654321') {
-    if (env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET must be securely configured in production');
+  const isProd = env.NODE_ENV === 'production';
+
+  if (isProd) {
+    const required: Array<keyof typeof env> = [
+      'MONGODB_URI',
+      'JWT_SECRET',
+      'CLIENT_URL',
+    ];
+
+    const missing = required.filter((key) => !process.env[key]);
+    if (missing.length > 0) {
+      throw new Error(
+        `[ENV] Missing required production environment variables: ${missing.join(', ')}`
+      );
+    }
+
+    if (env.JWT_SECRET === 'fallback_secret_must_be_set_in_production_987654321') {
+      throw new Error('[ENV] JWT_SECRET must be a strong, unique secret in production.');
+    }
+
+    if (env.MONGODB_URI.startsWith('mongodb://127.0.0.1') || env.MONGODB_URI.startsWith('mongodb://localhost')) {
+      console.warn('[ENV] WARNING: Production is using a local MongoDB URI. Use MongoDB Atlas.');
+    }
+  } else {
+    if (!env.MONGODB_URI) {
+      console.warn('[WARN] MONGODB_URI is not set, defaulting to local mongodb');
+    }
+    if (env.JWT_SECRET === 'fallback_secret_must_be_set_in_production_987654321') {
+      console.warn('[WARN] Using fallback JWT_SECRET. Set a proper JWT_SECRET in .env');
     }
   }
 }

@@ -24,9 +24,26 @@ app.use(
 );
 
 // CORS configuration
+// CLIENT_URL may be comma-separated for multiple allowed origins
+// e.g. CLIENT_URL=https://your-app.vercel.app,https://your-app-preview.vercel.app
+const allowedOrigins = new Set([
+  ...env.CLIENT_URL.split(',').map((u) => u.trim()).filter(Boolean),
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+]);
+
 app.use(
   cors({
-    origin: [env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, Postman, server-to-server)
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin} is not an allowed origin.`));
+      }
+    },
     credentials: true,
   })
 );

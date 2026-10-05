@@ -7,9 +7,17 @@ class RealtimeService {
   private io: SocketIOServer | null = null;
 
   public initialize(server: HttpServer): void {
+    const allowedOrigins = [
+      ...env.CLIENT_URL.split(',').map((u) => u.trim()).filter(Boolean),
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5174',
+    ];
+
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: [env.CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5174', 'http://127.0.0.1:5174'],
+        origin: allowedOrigins,
         credentials: true,
       },
     });

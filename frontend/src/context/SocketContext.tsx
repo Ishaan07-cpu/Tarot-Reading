@@ -37,7 +37,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    const socketInstance = io('/', {
+    // In production (Vercel), connect directly to the Render backend.
+    // In local development, '/' works via Vite's WebSocket proxy.
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || '/';
+
+    const socketInstance = io(socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
