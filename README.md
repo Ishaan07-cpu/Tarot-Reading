@@ -267,11 +267,7 @@ GitHub → Vercel (frontend) + Render (backend) + MongoDB Atlas
 
 1. Go to [vercel.com](https://vercel.com) → Import Git Repository
 2. Select `Ishaan07-cpu/Tarot-Reading`
-3. Set:
-   - **Framework Preset**: Vite
-   - **Root Directory**: `frontend`
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+3. Either use the repository root (configured by the root `vercel.json` to build and serve only the frontend) or set **Root Directory** to `frontend` with the Vite preset and `npm run build` / `dist`.
 4. Add Environment Variables:
    ```
    VITE_API_URL=https://your-backend.onrender.com
@@ -308,7 +304,7 @@ The `frontend/vercel.json` handles React Router SPA rewrites automatically.
    ```
 5. Deploy
 
-> After Render deploys, copy your Render URL and set it as `VITE_API_URL` and `VITE_SOCKET_URL` in Vercel.
+> After Render deploys, copy its URL and set it as `VITE_API_URL` and `VITE_SOCKET_URL` in Vercel, then redeploy the frontend. Do not point either variable at the Vercel frontend URL. Set `CLIENT_URL` on Render to the exact Vercel frontend origin; comma-separated production/preview origins are supported.
 
 ---
 

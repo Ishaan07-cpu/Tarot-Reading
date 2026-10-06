@@ -23,6 +23,21 @@ export const env = {
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'AdminSecurePass123!',
 };
 
+export function getAllowedOrigins(): string[] {
+  const configuredOrigins = env.CLIENT_URL.split(',').map((origin) => origin.trim()).filter(Boolean);
+  const developmentOrigins =
+    env.NODE_ENV === 'production'
+      ? []
+      : [
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          'http://localhost:5174',
+          'http://127.0.0.1:5174',
+        ];
+
+  return [...new Set([...configuredOrigins, ...developmentOrigins])];
+}
+
 export function validateEnv() {
   const isProd = env.NODE_ENV === 'production';
 

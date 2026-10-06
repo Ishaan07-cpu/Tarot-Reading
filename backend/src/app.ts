@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import { env, validateEnv } from './config/env';
+import { env, getAllowedOrigins, validateEnv } from './config/env';
 import { connectDB } from './config/db';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -25,20 +25,13 @@ app.use(
 );
 
 // CORS configuration
-// CLIENT_URL may be comma-separated for multiple allowed origins
-const allowedOrigins = new Set([
-  ...env.CLIENT_URL.split(',').map((u) => u.trim()).filter(Boolean),
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:5174',
-  'http://127.0.0.1:5174',
-]);
+const allowedOrigins = getAllowedOrigins();
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, server-to-server) or Vercel preview/production domains
-      if (!origin || allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+      // Allow requests with no origin (curl, Postman, server-to-server) or an explicitly configured origin.
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked: ${origin} is not an allowed origin.`));

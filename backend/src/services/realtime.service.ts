@@ -1,23 +1,15 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { verifyToken } from '../utils/jwt';
-import { env } from '../config/env';
+import { getAllowedOrigins } from '../config/env';
 
 class RealtimeService {
   private io: SocketIOServer | null = null;
 
   public initialize(server: HttpServer): void {
-    const allowedOrigins = [
-      ...env.CLIENT_URL.split(',').map((u) => u.trim()).filter(Boolean),
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5174',
-    ];
-
     this.io = new SocketIOServer(server, {
       cors: {
-        origin: allowedOrigins,
+        origin: getAllowedOrigins(),
         credentials: true,
       },
     });
