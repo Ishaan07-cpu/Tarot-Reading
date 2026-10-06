@@ -132,6 +132,15 @@ export const Navbar: React.FC = () => {
                   Sign In
                   <span className="absolute bottom-0 left-3 right-3 h-px bg-amber-400 scale-x-0 group-hover:scale-x-100 transition-transform duration-250 origin-left rounded-full" />
                 </Link>
+                <Link to="/signup">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="transition-all duration-200 hover:scale-[1.03]"
+                  >
+                    Sign Up
+                  </Button>
+                </Link>
                 <Button
                   variant="gold"
                   size="sm"
@@ -229,14 +238,23 @@ export const Navbar: React.FC = () => {
                 </button>
               </>
             ) : (
-              <>
-                <Link
-                  to="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block w-full text-center py-2 text-slate-300 hover:text-amber-300 transition-colors duration-200"
-                >
-                  Sign In
-                </Link>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full text-center py-2.5 rounded-lg border border-purple-800/60 bg-purple-950/40 text-slate-200 hover:text-amber-300 hover:border-purple-600 transition-colors text-sm font-medium"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block w-full text-center py-2.5 rounded-lg border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 transition-colors text-sm font-medium"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
                 <Button
                   variant="gold"
                   className="w-full"
@@ -247,7 +265,7 @@ export const Navbar: React.FC = () => {
                 >
                   Book a Reading
                 </Button>
-              </>
+              </div>
             )}
           </div>
         </div>

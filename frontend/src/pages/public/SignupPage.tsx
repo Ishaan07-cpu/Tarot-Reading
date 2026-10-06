@@ -27,45 +27,61 @@ export const SignupPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    const cleanData = {
+      name: formData.name.trim(),
+      email: formData.email.trim().toLowerCase(),
+      phone: formData.phone.trim(),
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    };
+
+    if (cleanData.password !== cleanData.confirmPassword) {
       setError('Passwords do not match.');
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (cleanData.password.length < 6) {
       setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (cleanData.phone.length < 7) {
+      setError('Phone number must be at least 7 characters.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await signup(formData);
+      const res = await signup(cleanData);
       if (res?.success) {
-        navigate(`/verify-email?email=${encodeURIComponent(formData.email.trim())}`);
+        navigate(`/verify-email?email=${encodeURIComponent(cleanData.email)}`);
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || 'Failed to create account. Please try again.'
-      );
+      const msg =
+        err.response?.data?.message ||
+        (err.message === 'Network Error'
+          ? 'Unable to reach the server. Please check your connection or server status.'
+          : 'Failed to create account. Please try again.');
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0819] flex flex-col justify-center py-12 sm:px-6 lg:px-8 mystic-gradient-bg">
+    <div className="relative min-h-screen bg-[#0b0819] flex flex-col justify-center py-12 sm:px-6 lg:px-8 mystic-gradient-bg">
       {/* Back Button */}
-      <div className="absolute top-6 left-6">
-        <button
-          onClick={() => navigate(-1)}
+      <div className="absolute top-6 left-6 z-20">
+        <Link
+          to="/login"
           className="group flex items-center gap-2 text-sm text-slate-400 hover:text-amber-300 transition-all duration-200"
         >
-          <span className="flex items-center justify-center w-8 h-8 rounded-full border border-purple-800/60 bg-purple-950/40 group-hover:border-amber-400/60 group-hover:bg-purple-900/40 transition-all duration-200">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full border border-purple-800/60 bg-purple-950/60 group-hover:border-amber-400/60 group-hover:bg-purple-900/60 transition-all duration-200 shadow-md">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
           </span>
-          <span className="font-medium">Back</span>
-        </button>
+          <span className="font-medium">Back to Sign In</span>
+        </Link>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">

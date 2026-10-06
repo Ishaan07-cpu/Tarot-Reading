@@ -21,8 +21,10 @@ export const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     try {
-      const res = await login(email, password);
+      const res = await login(cleanEmail, password);
       if (res?.success) {
         const user = res.data.user;
         if (redirect) {
@@ -34,11 +36,15 @@ export const LoginPage: React.FC = () => {
         }
       }
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Login failed. Please check your credentials.';
+      const msg =
+        err.response?.data?.message ||
+        (err.message === 'Network Error'
+          ? 'Unable to reach the server. Please check your connection or server status.'
+          : 'Login failed. Please check your credentials.');
       const data = err.response?.data?.errors;
 
       if (data?.needsVerification) {
-        navigate(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        navigate(`/verify-email?email=${encodeURIComponent(data.email || cleanEmail)}`);
         return;
       }
 
@@ -49,18 +55,18 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0819] flex flex-col justify-center py-12 sm:px-6 lg:px-8 mystic-gradient-bg">
+    <div className="relative min-h-screen bg-[#0b0819] flex flex-col justify-center py-12 sm:px-6 lg:px-8 mystic-gradient-bg">
       {/* Back Button */}
-      <div className="absolute top-6 left-6">
-        <button
-          onClick={() => navigate(-1)}
+      <div className="absolute top-6 left-6 z-20">
+        <Link
+          to="/"
           className="group flex items-center gap-2 text-sm text-slate-400 hover:text-amber-300 transition-all duration-200"
         >
-          <span className="flex items-center justify-center w-8 h-8 rounded-full border border-purple-800/60 bg-purple-950/40 group-hover:border-amber-400/60 group-hover:bg-purple-900/40 transition-all duration-200">
+          <span className="flex items-center justify-center w-8 h-8 rounded-full border border-purple-800/60 bg-purple-950/60 group-hover:border-amber-400/60 group-hover:bg-purple-900/60 transition-all duration-200 shadow-md">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
           </span>
-          <span className="font-medium">Back</span>
-        </button>
+          <span className="font-medium">Back to Home</span>
+        </Link>
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
