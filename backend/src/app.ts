@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { env, validateEnv } from './config/env';
+import { connectDB } from './config/db';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 
@@ -25,7 +26,6 @@ app.use(
 
 // CORS configuration
 // CLIENT_URL may be comma-separated for multiple allowed origins
-// e.g. CLIENT_URL=https://your-app.vercel.app,https://your-app-preview.vercel.app
 const allowedOrigins = new Set([
   ...env.CLIENT_URL.split(',').map((u) => u.trim()).filter(Boolean),
   'http://localhost:5173',
@@ -37,8 +37,8 @@ const allowedOrigins = new Set([
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (curl, Postman, server-to-server)
-      if (!origin || allowedOrigins.has(origin)) {
+      // Allow requests with no origin (curl, Postman, server-to-server) or Vercel preview/production domains
+      if (!origin || allowedOrigins.has(origin) || origin.endsWith('.vercel.app')) {
         callback(null, true);
       } else {
         callback(new Error(`CORS blocked: ${origin} is not an allowed origin.`));
@@ -47,6 +47,16 @@ app.use(
     credentials: true,
   })
 );
+
+// Ensure MongoDB is connected before processing requests (critical for Vercel serverless execution)
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Rate limiter on general API calls
 app.use('/api', apiLimiter);
@@ -74,3 +84,5 @@ app.use('/api/admin', adminRoutes);
 
 // Centralized error handling
 app.use(errorHandler);
+
+export default app;

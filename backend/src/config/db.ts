@@ -2,10 +2,20 @@ import mongoose from 'mongoose';
 import { env } from './env';
 
 let isReplicaSet = false;
+let isConnected = false;
 
 export async function connectDB(): Promise<void> {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (isConnected) {
+    return;
+  }
+
   try {
     const conn = await mongoose.connect(env.MONGODB_URI);
+    isConnected = true;
     console.log(`[DB] Connected to MongoDB: ${conn.connection.host}`);
 
     // Check if connected instance is a replica set (required for multi-doc transactions)
@@ -17,12 +27,13 @@ export async function connectDB(): Promise<void> {
         console.log(`[DB] Replica Set Mode: ${isReplicaSet ? 'YES (Transactions fully supported)' : 'NO (Standalone mode)'}`);
       }
     } catch {
-      // In some Atlas restricted user roles, serverStatus might be forbidden. Try ping or default
+      // In some Atlas restricted user roles, serverStatus might be forbidden. Default to replica set
       isReplicaSet = true;
     }
   } catch (error) {
+    isConnected = false;
     console.error('[DB] MongoDB connection error:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
