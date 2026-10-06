@@ -37,8 +37,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    // In production (Vercel), connect directly to the Render backend.
-    // In local development, '/' works via Vite's WebSocket proxy.
+    // Use the same origin so local development and Vercel service routing agree.
     const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '/';
 
     const socketInstance = io(socketUrl, {
