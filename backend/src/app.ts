@@ -41,7 +41,7 @@ app.use(
   })
 );
 
-// Ensure MongoDB is connected before processing requests (critical for Vercel serverless execution)
+// Ensure MongoDB is connected before processing API requests.
 app.use(async (_req, _res, next) => {
   try {
     await connectDB();

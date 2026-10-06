@@ -37,7 +37,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
-    // Use the same origin so local development and Vercel service routing agree.
+    // In production, connect to Render; locally, use Vite's same-origin proxy.
     const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '/';
 
     const socketInstance = io(socketUrl, {

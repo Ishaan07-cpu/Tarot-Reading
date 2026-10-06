@@ -13,6 +13,13 @@ import { sendSuccess, sendError } from '../utils/apiResponse';
 import { emailService } from '../services/email.service';
 import { env } from '../config/env';
 
+const authCookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === 'production',
+  sameSite: env.NODE_ENV === 'production' ? ('none' as const) : ('lax' as const),
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 export class AuthController {
   /**
    * POST /api/auth/signup
@@ -141,12 +148,7 @@ export class AuthController {
       });
 
       // Set HTTP-only cookie
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie('token', token, authCookieOptions);
 
       sendSuccess(
         res,
@@ -278,12 +280,7 @@ export class AuthController {
         name: user.name,
       });
 
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      res.cookie('token', token, authCookieOptions);
 
       sendSuccess(
         res,
@@ -311,7 +308,11 @@ export class AuthController {
    * POST /api/auth/logout
    */
   public static async logout(_req: Request, res: Response): Promise<void> {
-    res.clearCookie('token');
+    res.clearCookie('token', {
+      httpOnly: authCookieOptions.httpOnly,
+      secure: authCookieOptions.secure,
+      sameSite: authCookieOptions.sameSite,
+    });
     sendSuccess(res, null, 200, 'Logged out successfully.');
   }
 

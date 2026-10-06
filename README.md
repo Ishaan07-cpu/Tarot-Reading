@@ -43,7 +43,7 @@ A complete full-stack tarot reading consultation booking platform with client an
 | Realtime Server | Socket.IO |
 | Security | Helmet, express-rate-limit, bcrypt, Zod validation |
 | Testing | Jest, Supertest |
-| Deployment | Vercel (frontend and backend services) · MongoDB Atlas (database) |
+| Deployment | Vercel (frontend) · Render (backend) · MongoDB Atlas (database) |
 
 ---
 
@@ -54,9 +54,13 @@ Browser (React/Vite)
        │ HTTPS REST API
        │ HTTPS WebSocket
        ▼
-Vercel Services
-  - Frontend: Vite static site
-  - Backend: Express API (/api/*) + Socket.IO (/socket.io)
+Vercel CDN → frontend/dist (static)
+       │ HTTPS REST API + WebSocket
+       ▼
+Render (Node.js + Express)
+  - REST API: /api/*
+  - Socket.IO: /socket.io
+  - Outbox worker (4s polling)
        │
        ▼
 MongoDB Atlas
@@ -167,7 +171,7 @@ All variables are defined in `.env` (local) or set in your hosting provider (pro
 
 | Variable | Required | Description |
 |---|---|---|
-| `PORT` | No | Backend port (default: 5000; hosting platform may set this automatically) |
+| `PORT` | No | Backend port (default: 5000; Render sets this automatically) |
 | `NODE_ENV` | Yes | `development` or `production` |
 | `MONGODB_URI` | Yes | MongoDB connection string |
 | `JWT_SECRET` | Yes | Long random secret for signing JWTs |
@@ -187,8 +191,8 @@ All variables are defined in `.env` (local) or set in your hosting provider (pro
 
 | Variable | Description |
 |---|---|
-| `VITE_API_URL` | Optional backend origin when frontend and API use separate hosts; leave unset for the same-origin Vercel service rewrite |
-| `VITE_SOCKET_URL` | Optional Socket.IO origin; leave unset for the same-origin Vercel deployment |
+| `VITE_API_URL` | Render backend origin, e.g. `https://your-backend.onrender.com` (no trailing slash or `/api`) |
+| `VITE_SOCKET_URL` | Render backend origin, usually the same value as `VITE_API_URL` |
 
 ---
 
@@ -204,7 +208,7 @@ No configuration needed if MongoDB is installed.
 2. Create a database user (username + password)
 3. Whitelist `0.0.0.0/0` in Network Access (or restrict access according to your hosting platform)
 4. Get the connection string: `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/tarot_reading?retryWrites=true&w=majority`
-5. Set `MONGODB_URI` in the Vercel backend service environment variables
+5. Set `MONGODB_URI` in Render environment variables
 
 ---
 
@@ -254,26 +258,47 @@ cd frontend && npm run build
 ### Architecture Summary
 
 ```
-GitHub → Vercel (frontend and backend services) + MongoDB Atlas
+GitHub → Vercel (frontend) + Render (backend) + MongoDB Atlas
 ```
 
 ---
 
-### Vercel (Frontend and Backend)
+### Vercel (Frontend)
 
-1. Import `Ishaan07-cpu/Tarot-Reading` as a Vercel project and keep the project root at the repository root.
-2. Keep the project framework set to **Services**. The root `vercel.json` declares the `frontend` Vite service and `backend` Express service and rewrites `/api/*` and `/socket.io/*` requests to the backend service.
-3. Configure the backend service environment variables (`NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`, SMTP settings, and admin seed values as needed). Set `CLIENT_URL` to the deployed frontend origin.
-4. Leave `VITE_API_URL` and `VITE_SOCKET_URL` unset when using the same-origin service routing; API and Socket.IO requests use the Vercel rewrites.
-5. Deploy the project. Do not set the Vercel project root to only `frontend` or change its framework preset from **Services**, as that prevents Vercel from discovering both services.
+1. Import `Ishaan07-cpu/Tarot-Reading` as a Vercel project and keep the project root at the repository root. The root `vercel.json` builds the frontend only.
+2. Set the framework preset to **Vite** (also configured in `vercel.json`).
+3. Set these environment variables for every deployment environment:
+   ```
+   VITE_API_URL=https://your-backend.onrender.com
+   VITE_SOCKET_URL=https://your-backend.onrender.com
+   ```
+4. Deploy or redeploy after setting the variables. These `VITE_*` values are embedded at build time. Do not point them to the Vercel frontend URL.
 
-> Vercel Functions are serverless. Confirm the deployed backend supports the app's required long-running outbox worker and Socket.IO behavior; if the platform does not support those workloads, deploy the backend on a persistent Node.js host and set the optional frontend URL variables to that backend origin.
+### Render (Backend)
+
+1. Create a **Web Service** connected to `Ishaan07-cpu/Tarot-Reading`.
+2. Set **Root Directory** to `backend`, **Build Command** to `npm install && npm run build`, and **Start Command** to `npm start`.
+3. Add environment variables:
+   ```
+   NODE_ENV=production
+   MONGODB_URI=mongodb+srv://...
+   JWT_SECRET=<strong-random-secret>
+   CLIENT_URL=https://your-app.vercel.app
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=your@gmail.com
+   SMTP_PASSWORD=your_app_password
+   SMTP_FROM="Mystic Tarot" <your@gmail.com>
+   ```
+   Render supplies `PORT` automatically. Set `CLIENT_URL` to the exact frontend origin; comma-separated Vercel origins can be used for previews.
+4. Deploy the service, then copy its `https://...onrender.com` URL into `VITE_API_URL` and `VITE_SOCKET_URL` in Vercel and redeploy the frontend.
 
 ---
 
 ### Seed the Production Database
 
-After the Vercel backend is deployed and Atlas is connected, run the seed scripts **once** from a trusted local environment configured with the production database URI and seed credentials:
+After the Render backend is deployed and Atlas is connected, run the seed scripts **once** from a trusted local environment configured with the production database URI and seed credentials:
 
 ```bash
 npm run seed:admin
@@ -290,7 +315,8 @@ npm run seed:reading-types
 - OTPs are hashed with SHA-256 and expire in 10 minutes
 - Rate limiting: 200 req/15min (general), 20 req/15min (auth)
 - Helmet sets secure HTTP headers
-- CORS is restricted to `CLIENT_URL` origins only
+- CORS is restricted to configured `CLIENT_URL` origins only
+- Production auth cookies use `SameSite=None; Secure` for Vercel-to-Render requests; the frontend also sends its bearer token
 - Admin role is enforced server-side on every admin route
 - Resource ownership is enforced on all client booking routes
 
@@ -328,7 +354,7 @@ npm run seed:reading-types
 After deployment, replace these placeholders:
 
 - **Frontend (Vercel)**: `https://your-app.vercel.app`
-- **Backend service**: configured in the root `vercel.json` and routed under `/api`
+- **Backend (Render)**: `https://your-backend.onrender.com`
 - **Repository**: `https://github.com/Ishaan07-cpu/Tarot-Reading`
 
 ---

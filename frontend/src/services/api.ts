@@ -1,11 +1,9 @@
 import axios from 'axios';
 
-// Relative API requests use Vercel's /api service rewrite in production and
-// Vite's localhost proxy during local development.
+// In production, VITE_API_URL is the Render backend origin. Locally, Vite
+// proxies relative /api requests to the development backend.
 const apiUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, '');
-const baseURL = apiUrl
-  ? `${apiUrl}/api`
-  : '/api';
+const baseURL = apiUrl ? `${apiUrl}/api` : '/api';
 
 export const api = axios.create({
   baseURL,
